@@ -308,6 +308,204 @@ export const getTotalRechargeData = async (req, res) => {
   }
 };
 
+// export const rechargeDuet = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const statusNum = Number(req.body.status); // 0=pending, 1=approve, 2=reject
+
+//     if (!id || ![0, 1, 2].includes(statusNum)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Recharge id and valid status (0,1,2) required",
+//       });
+//     }
+
+//     const recharge = await Recharge.findById(id);
+//     if (!recharge) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Transaction not found",
+//       });
+//     }
+
+//     const oldStatus = recharge.status;
+
+//     const user = await User.findById(recharge.userId);
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+    
+//     let amount = Number(recharge.money || 0);
+//     // console.log("amount1",amount);
+    
+
+//     if (recharge.method === "USDT") {
+//       amount = Number(recharge.money  || 0)*92;
+//     }
+
+//     // console.log("amount", amount);
+    
+      
+
+
+//     /* =====================================================
+//        ❌ REJECT (always allowed, no balance effect)
+//        ===================================================== */
+//     if (statusNum === 2) {
+//       await Recharge.findByIdAndUpdate(
+//         recharge._id,
+//         { $set: { status: 2 } },
+//         { new: true }
+//       );
+
+//       return res.json({
+//         success: true,
+//         message: "Recharge rejected successfully",
+//       });
+//     }
+
+//     /* =====================================================
+//        ⏳ PENDING (admin can reset to pending)
+//        ===================================================== */
+//     if (statusNum === 0) {
+//       await Recharge.findByIdAndUpdate(
+//         recharge._id,
+//         { $set: { status: 0 } },
+//         { new: true }
+//       );
+
+//       return res.json({
+//         success: true,
+//         message: "Recharge set to pending",
+//       });
+//     }
+
+//     /* =====================================================
+//        ✅ APPROVE
+//        ===================================================== */
+//     if (statusNum === 1) {
+
+//       // 🔥 CREDIT ONLY IF NOT ALREADY APPROVED
+//       if (oldStatus !== 1) {
+
+//         /* ---------- PROVIDER BUY ---------- */
+//         if (recharge.type === "provider_buy") {
+//           const access = await UserProviderAccess.findOne({ userId: user._id });
+
+//           if (access) {
+//             access.providers = access.providers.map(p =>
+//               p.status === 0 ? { ...p, status: 1 } : p
+//             );
+
+//             access.totalPayAmount = 0;
+//             access.totalAmount = access.providers.reduce(
+//               (sum, p) => sum + Number(p.price || 0),
+//               0
+//             );
+
+//             user.balance += amount;
+//             user.totalggr += amount;
+//             user.isActive = 1;
+
+//             await access.save();
+//             await user.save();
+//           }
+//         }
+
+//         /* ---------- CRICKET ---------- */
+//         else if (recharge.type === "cricket") {
+//           const cricketaccess = await cricketAccess.findOne({
+//             userId: user._id,
+//           });
+
+//           if (!cricketaccess) {
+//             return res.status(404).json({
+//               success: false,
+//               message: "Cricket subscription not initiated",
+//             });
+//           }
+
+//           const months = Number(cricketaccess.months || 0);
+//           const paid = Number(cricketaccess.totalPayAmount || 0);
+//           const now = new Date();
+
+//           if (months <= 0) {
+//             return res.status(400).json({
+//               success: false,
+//               message: "Invalid cricket months",
+//             });
+//           }
+
+//           const baseDate =
+//             cricketaccess.isActive === 1 &&
+//             cricketaccess.endDate &&
+//             cricketaccess.endDate > now
+//               ? cricketaccess.endDate
+//               : now;
+
+//           const newEnd = new Date(baseDate);
+//           newEnd.setMonth(newEnd.getMonth() + months);
+
+//           cricketaccess.isActive = 1;
+//           cricketaccess.startDate = cricketaccess.startDate || now;
+//           cricketaccess.endDate = newEnd;
+//           cricketaccess.expiresAt = newEnd;
+//           cricketaccess.totalPayAmount = 0;
+
+//           user.cricketBalence = (user.cricketBalence || 0) + paid;
+//           user.isActive = 1;
+
+//           await cricketaccess.save();
+//           await user.save();
+//         }
+
+//         /* ---------- NORMAL WALLET ---------- */
+//         else {
+//           user.balance += amount;
+//           user.totalggr += amount;
+//           user.isActive = 1;
+//           await user.save();
+//         }
+//       }
+
+//       // 🔥 STATUS UPDATE ALWAYS (even re-approve)
+//       await Recharge.findByIdAndUpdate(
+//         recharge._id,
+//         { $set: { status: 1 } },
+//         { new: true }
+//       );
+
+//       return res.json({
+//         success: true,
+//         message:
+//           oldStatus === 1
+//             ? "Recharge already approved (status updated)"
+//             : "Recharge approved successfully",
+//       });
+//     }
+
+//     return res.status(400).json({
+//       success: false,
+//       message: "Invalid status value",
+//     });
+
+//   } catch (error) {
+//     console.error("RechargeDuet error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
+const roundToTwo = (num) => {
+  return Number(Number(num).toFixed(2));
+};
+
 export const rechargeDuet = async (req, res) => {
   try {
     const { id } = req.params;
@@ -337,23 +535,15 @@ export const rechargeDuet = async (req, res) => {
         message: "User not found",
       });
     }
-    
+
     let amount = Number(recharge.money || 0);
-    // console.log("amount1",amount);
-    
 
     if (recharge.method === "USDT") {
-      amount = Number(recharge.money  || 0)*92;
+      amount = Number(recharge.money || 0) * 92;
     }
 
-    // console.log("amount", amount);
-    
-      
+    amount = roundToTwo(amount);
 
-
-    /* =====================================================
-       ❌ REJECT (always allowed, no balance effect)
-       ===================================================== */
     if (statusNum === 2) {
       await Recharge.findByIdAndUpdate(
         recharge._id,
@@ -367,9 +557,6 @@ export const rechargeDuet = async (req, res) => {
       });
     }
 
-    /* =====================================================
-       ⏳ PENDING (admin can reset to pending)
-       ===================================================== */
     if (statusNum === 0) {
       await Recharge.findByIdAndUpdate(
         recharge._id,
@@ -383,40 +570,29 @@ export const rechargeDuet = async (req, res) => {
       });
     }
 
-    /* =====================================================
-       ✅ APPROVE
-       ===================================================== */
     if (statusNum === 1) {
-
-      // 🔥 CREDIT ONLY IF NOT ALREADY APPROVED
       if (oldStatus !== 1) {
-
-        /* ---------- PROVIDER BUY ---------- */
         if (recharge.type === "provider_buy") {
           const access = await UserProviderAccess.findOne({ userId: user._id });
 
           if (access) {
-            access.providers = access.providers.map(p =>
+            access.providers = access.providers.map((p) =>
               p.status === 0 ? { ...p, status: 1 } : p
             );
 
             access.totalPayAmount = 0;
-            access.totalAmount = access.providers.reduce(
-              (sum, p) => sum + Number(p.price || 0),
-              0
+            access.totalAmount = roundToTwo(
+              access.providers.reduce((sum, p) => sum + Number(p.price || 0), 0)
             );
 
-            user.balance += amount;
-            user.totalggr += amount;
+            user.balance = roundToTwo((user.balance || 0) + amount);
+            user.totalggr = roundToTwo((user.totalggr || 0) + amount);
             user.isActive = 1;
 
             await access.save();
             await user.save();
           }
-        }
-
-        /* ---------- CRICKET ---------- */
-        else if (recharge.type === "cricket") {
+        } else if (recharge.type === "cricket") {
           const cricketaccess = await cricketAccess.findOne({
             userId: user._id,
           });
@@ -455,23 +631,21 @@ export const rechargeDuet = async (req, res) => {
           cricketaccess.expiresAt = newEnd;
           cricketaccess.totalPayAmount = 0;
 
-          user.cricketBalence = (user.cricketBalence || 0) + paid;
+          user.cricketBalence = roundToTwo(
+            (user.cricketBalence || 0) + paid
+          );
           user.isActive = 1;
 
           await cricketaccess.save();
           await user.save();
-        }
-
-        /* ---------- NORMAL WALLET ---------- */
-        else {
-          user.balance += amount;
-          user.totalggr += amount;
+        } else {
+          user.balance = roundToTwo((user.balance || 0) + amount);
+          user.totalggr = roundToTwo((user.totalggr || 0) + amount);
           user.isActive = 1;
           await user.save();
         }
       }
 
-      // 🔥 STATUS UPDATE ALWAYS (even re-approve)
       await Recharge.findByIdAndUpdate(
         recharge._id,
         { $set: { status: 1 } },
@@ -491,7 +665,6 @@ export const rechargeDuet = async (req, res) => {
       success: false,
       message: "Invalid status value",
     });
-
   } catch (error) {
     console.error("RechargeDuet error:", error);
     return res.status(500).json({
@@ -500,7 +673,6 @@ export const rechargeDuet = async (req, res) => {
     });
   }
 };
-
 
 export const logout = async (req, res) => {
   try {
