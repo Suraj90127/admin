@@ -21,6 +21,7 @@ const EditUserModal = ({ user, onClose }) => {
     balance: 0,
     cricketBalence: 0,
     ipv4_address: "",
+    ggr_coust:"",
     domain: "",
     isActive: 1,
   });
@@ -32,6 +33,7 @@ const EditUserModal = ({ user, onClose }) => {
         name: user.name || "",
         role: user.role || "user",
         balance: user.balance || 0,
+        ggr_coust:user.ggr_coust ||0,
         cricketBalence: user.cricketBalence || 0,
         ipv4_address: user.ipv4_address?.join(", ") || "",
         domain: user.domain || "",
@@ -62,6 +64,7 @@ const EditUserModal = ({ user, onClose }) => {
           ipv4_address: form.ipv4_address,
           domain: form.domain,
           balance: Number(form.balance),
+          ggr_coust:Number(form.ggr_coust),
           cricketBalence: Number(form.cricketBalence),
           isActive: Number(form.isActive),
         },
@@ -179,6 +182,16 @@ const EditUserModal = ({ user, onClose }) => {
             type="text"
             name="ipv4_address"
             value={form.ipv4_address}
+            onChange={handleChange}
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+          />
+        </div>
+        <div className="mb-4">
+          <Label>Update user GGR coust in %</Label>
+          <input
+            type="number"
+            name="ggr_coust"
+            value={form.ggr_coust}
             onChange={handleChange}
             className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
           />

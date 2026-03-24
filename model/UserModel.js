@@ -13,8 +13,8 @@ const userSchema = new mongoose.Schema(
             required: true 
         },
          by: { 
-            type: String, 
-            default:"zapcore"
+        type: String, 
+        default:"zapcore"
         },
         email: { 
             type: String, 
@@ -23,9 +23,9 @@ const userSchema = new mongoose.Schema(
         phone:{
             type:Number,
         },
-        domain:{
-            type:String,
-
+       domain:{
+        type:String,
+        default:""
         },
        ipv4_address:{
         type:[String],
@@ -69,10 +69,13 @@ const userSchema = new mongoose.Schema(
         },
         duepay:{
             type:String,
-            unique:true
         },
         user_ggr:{
             type:Number
+        },
+        ggr_coust:{
+            type:Number,
+            default:12
         },
         todaybet:{
             type:Number
@@ -86,15 +89,16 @@ const userSchema = new mongoose.Schema(
         },
         isdemo:{
             type:Number,
-            deflate:0
+            default:0
         },
         isActive:{
             type:Number,
-            deflate:0
+            default:0
         },
         ggrupdatedate:{
             type:Date,
         }
+
     },
     { timestamps: true }
 );

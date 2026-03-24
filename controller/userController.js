@@ -272,6 +272,7 @@ export const updateUser = async (req, res) => {
       "balance",
       "nativetggr",
       "role",
+      "ggr_coust"
     ];
 
     const updateData = {};
